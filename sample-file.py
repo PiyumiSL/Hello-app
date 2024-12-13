@@ -1,9 +1,3 @@
-import streamlit as st
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-import time
-
-# App Title
 st.write('Hello world!')
 st.title('Synergy prediction of potential drug candidates')
 
