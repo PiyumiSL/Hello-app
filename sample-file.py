@@ -48,3 +48,27 @@ if uploaded_file is not None:
                 
                 # Display the accuracy
                 st.success(f"Random Forest Model trained successfully! Accuracy: {accuracy:.2f}")
+
+
+# Upload test data set
+st.header('Upload Your Test Data Set Here')
+uploaded_test_file = st.file_uploader("Choose a test CSV file", type="csv", key="test")
+
+if uploaded_test_file is not None:
+    st.write("Test file uploaded successfully!")
+    
+    # Read the uploaded test CSV file
+    test_data = pd.read_csv(uploaded_test_file)
+    st.write(test_data)
+
+    # Button to make predictions on the test data
+    if st.button("Make Predictions on Test Data"):
+        if 'model' in locals():
+            # Ensure the model is defined
+            test_predictions = model.predict(test_data)
+            test_data['Predictions'] = test_predictions
+            
+            st.write("Predictions made successfully!")
+            st.write(test_data)
+        else:
+            st.error("Model is not trained yet. Please train the model first.")
