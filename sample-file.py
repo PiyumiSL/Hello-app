@@ -19,10 +19,7 @@ if uploaded_file is not None:
         data.to_csv("uploaded_training_data.csv", index=False)
         st.success("Data saved successfully for future use!")
 
-# Button to train the model
-if st.button("Train Your Model"):
-    if 'training_data' in st.session_state:
-        st.success("Training process initiated!")  # Placeholder message
-        # Here you can add the model training code in the future
-    else:
-        st.error("Please submit your training data first.")
+      # Button to train the Random Forest Model
+        if st.button("Train Random Forest Model"):
+            # Here you would include your model training code
+            st.success("Random Forest Model training initiated!")  # Placeholder message
