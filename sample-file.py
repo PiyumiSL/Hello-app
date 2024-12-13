@@ -1,11 +1,108 @@
 import streamlit as st
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+import numpy as np
+import random
 
 # App title
 st.title('Synergy Prediction of Potential Drug Candidates')
+
+# Utility functions to create a simple Random Forest
+def calculate_entropy(y):
+    """Calculate entropy of a label array."""
+    classes, counts = np.unique(y, return_counts=True)
+    probabilities = counts / len(y)
+    entropy = -np.sum(probabilities * np.log2(probabilities + 1e-9))  # Add small constant to avoid log(0)
+    return entropy
+
+def split_data(X, y, feature_index, threshold):
+    """Split dataset based on a feature index and threshold."""
+    left_indices = X[:, feature_index] <= threshold
+    right_indices = ~left_indices
+    return X[left_indices], y[left_indices], X[right_indices], y[right_indices]
+
+def find_best_split(X, y):
+    """Find the best feature and threshold to split the data."""
+    best_gain = -1
+    best_feature_index = None
+    best_threshold = None
+    current_entropy = calculate_entropy(y)
+
+    for feature_index in range(X.shape[1]):
+        thresholds = np.unique(X[:, feature_index])
+        for threshold in thresholds:
+            _, y_left, _, y_right = split_data(X, y, feature_index, threshold)
+            if len(y_left) == 0 or len(y_right) == 0:
+                continue
+
+            left_weight = len(y_left) / len(y)
+            right_weight = len(y_right) / len(y)
+            gain = current_entropy - (left_weight * calculate_entropy(y_left) + right_weight * calculate_entropy(y_right))
+
+            if gain > best_gain:
+                best_gain = gain
+                best_feature_index = feature_index
+                best_threshold = threshold
+
+    return best_feature_index, best_threshold
+
+class DecisionTree:
+    """A simple decision tree for classification."""
+    def __init__(self, max_depth):
+        self.max_depth = max_depth
+        self.tree = None
+
+    def fit(self, X, y, depth=0):
+        if len(np.unique(y)) == 1 or depth == self.max_depth:
+            self.tree = np.bincount(y).argmax()  # Leaf node with majority class
+            return
+
+        feature_index, threshold = find_best_split(X, y)
+        if feature_index is None:
+            self.tree = np.bincount(y).argmax()  # Leaf node
+            return
+
+        self.feature_index = feature_index
+        self.threshold = threshold
+
+        X_left, y_left, X_right, y_right = split_data(X, y, feature_index, threshold)
+
+        self.left = DecisionTree(self.max_depth)
+        self.left.fit(X_left, y_left, depth + 1)
+
+        self.right = DecisionTree(self.max_depth)
+        self.right.fit(X_right, y_right, depth + 1)
+
+    def predict(self, X):
+        if isinstance(self.tree, int):
+            return self.tree  # Leaf node
+
+        if X[self.feature_index] <= self.threshold:
+            return self.left.predict(X)
+        else:
+            return self.right.predict(X)
+
+class RandomForest:
+    """A simple random forest implementation."""
+    def __init__(self, n_trees, max_depth, sample_size):
+        self.n_trees = n_trees
+        self.max_depth = max_depth
+        self.sample_size = sample_size
+        self.trees = []
+
+    def fit(self, X, y):
+        for _ in range(self.n_trees):
+            indices = np.random.choice(len(X), self.sample_size, replace=True)
+            X_sample, y_sample = X[indices], y[indices]
+
+            tree = DecisionTree(self.max_depth)
+            tree.fit(X_sample, y_sample)
+            self.trees.append(tree)
+
+    def predict(self, X):
+        predictions = [tree.predict(x) for tree in self.trees for x in X]
+        predictions = np.array(predictions).reshape(self.n_trees, len(X))
+        majority_votes = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=predictions)
+        return majority_votes
 
 # Section to upload the training data
 st.header('Upload Your Training Data Set Here')
@@ -13,41 +110,23 @@ uploaded_training_file = st.file_uploader("Choose a CSV file for training", type
 
 if uploaded_training_file is not None:
     st.write("Training file uploaded successfully!")
-    
-    # Read and display the training data
     training_data = pd.read_csv(uploaded_training_file)
     st.write(training_data)
 
-    # Ask the user to specify the target column
     target_column = st.selectbox("Select the target column (output)", training_data.columns)
-
-    # Button to train the Random Forest Model
     if st.button("Train Random Forest Model"):
-        # Validate if the target column exists in the dataset
         if target_column not in training_data.columns:
-            st.error(f"Target column '{target_column}' not found in the uploaded training data.")
+            st.error(f"Target column '{target_column}' not found.")
         else:
-            # Prepare the data for training
-            X = training_data.drop(columns=[target_column])  # Features
-            y = training_data[target_column]  # Target
+            X = training_data.drop(columns=[target_column]).values
+            y = training_data[target_column].values
 
-            # Split the data into training and validation sets
-            X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+            # Train the Random Forest
+            model = RandomForest(n_trees=10, max_depth=3, sample_size=int(0.8 * len(X)))
+            model.fit(X, y)
+            st.success("Random Forest Model trained successfully!")
 
-            # Initialize and train the Random Forest model
-            model = RandomForestClassifier(n_estimators=100, random_state=42)
-            model.fit(X_train, y_train)
-
-            # Make predictions on the validation set
-            val_predictions = model.predict(X_val)
-
-            # Calculate the accuracy
-            accuracy = accuracy_score(y_val, val_predictions)
-
-            # Display the training results
-            st.success(f"Random Forest Model trained successfully! Validation Accuracy: {accuracy:.2f}")
-
-            # Save the trained model for later use
+            # Save the trained model for predictions
             st.session_state["trained_model"] = model
 
 # Section to upload the test data
@@ -56,32 +135,17 @@ uploaded_test_file = st.file_uploader("Choose a CSV file for testing", type="csv
 
 if uploaded_test_file is not None:
     st.write("Test file uploaded successfully!")
-    
-    # Read and display the test data
     test_data = pd.read_csv(uploaded_test_file)
     st.write(test_data)
 
-    # Button to make predictions on the test data
     if st.button("Make Predictions on Test Data"):
         if "trained_model" in st.session_state:
             model = st.session_state["trained_model"]
-            # Make predictions on the test data
-            test_predictions = model.predict(test_data)
+            X_test = test_data.values
 
-            # Add predictions as a new column in the test data
-            test_data['Predictions'] = test_predictions
-
-            # Display the predictions
+            predictions = [model.predict(x) for x in X_test]
+            test_data["Predictions"] = predictions
             st.write("Predictions made successfully!")
             st.write(test_data)
-
-            # Option to download the results
-            csv = test_data.to_csv(index=False)
-            st.download_button(
-                label="Download Predictions as CSV",
-                data=csv,
-                file_name="predictions.csv",
-                mime="text/csv"
-            )
         else:
             st.error("Model is not trained yet. Please train the model first.")
