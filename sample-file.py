@@ -12,3 +12,9 @@ if uploaded_file is not None:
     import pandas as pd
     data = pd.read_csv(uploaded_file)
     st.write(data)
+
+ # Submit Data button
+    if st.button("Submit Data"):
+        # Save the uploaded data to a CSV file for future work
+        data.to_csv("uploaded_training_data.csv", index=False)
+        st.success("Data saved successfully for future use!")
