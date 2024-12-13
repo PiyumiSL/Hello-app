@@ -49,6 +49,10 @@ class DecisionTree:
     def __init__(self, max_depth):
         self.max_depth = max_depth
         self.tree = None
+        self.feature_index = None  # Initialize feature index
+        self.threshold = None       # Initialize threshold
+        self.left = None            # Initialize left subtree
+        self.right = None           # Initialize right subtree
 
     def fit(self, X, y, depth=0):
         if len(np.unique(y)) == 1 or depth == self.max_depth:
