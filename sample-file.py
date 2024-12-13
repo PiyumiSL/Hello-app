@@ -133,13 +133,13 @@ if uploaded_training_file is not None:
 st.header('Upload Your Test Data Set Here')
 uploaded_test_file = st.file_uploader("Choose a CSV file for testing", type="csv", key="test")
 
-    if uploaded_test_file is not None:
+        if uploaded_test_file is not None:
     st.write("Test file uploaded successfully!")
     test_data = pd.read_csv(uploaded_test_file)
     st.write(test_data)
 
-   if st.button("Make Predictions on Test Data"):
-    if "trained_model" in st.session_state:
+       if st.button("Make Predictions on Test Data"):
+        if "trained_model" in st.session_state:
         model = st.session_state["trained_model"]
         X_test = test_data.values  # Convert test data to a NumPy array
 
@@ -147,5 +147,5 @@ uploaded_test_file = st.file_uploader("Choose a CSV file for testing", type="csv
         test_data["Predictions"] = predictions
         st.write("Predictions made successfully!")
         st.write(test_data)
-    else:
+        else:
         st.error("Model is not trained yet. Please train the model first.")
