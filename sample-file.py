@@ -24,7 +24,7 @@ if uploaded_file is not None:
             # Here you would include your model training code
             st.success("Random Forest Model training initiated!")  # Placeholder message
 
-              if target_column not in data.columns:
+            if target_column not in data.columns:
                 st.error(f"Column '{target_column}' not found in the uploaded data.")
             else:
                 # Prepare data for training
