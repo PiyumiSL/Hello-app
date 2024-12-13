@@ -1,24 +1,40 @@
 import streamlit as st
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+import time
+
+# App Title
 st.write('Hello world!')
-st.title('SYNERGY PREDICTION OF POTENTIAL DRUG CANDIDATES')
+st.title('Synergy prediction of potential drug candidates')
+
+# Initialize file variables
+training_file = None
+test_file = None
+
+# Upload training data section
 st.header('Upload your training data set here')
-uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+training_file = st.file_uploader("Choose a training CSV file", type="csv", key="training")
 
-if uploaded_file is not None:
-    st.write("File uploaded successfully!")
-    # Display the content of the file (optional)
-    import pandas as pd
-    data = pd.read_csv(uploaded_file)
-    st.write(data)
+if training_file is not None:
+    st.write("Training data uploaded successfully!")
+    training_data = pd.read_csv(training_file)
+    st.write("Training Data Preview:")
+    st.write(training_data)
+    
+    # Ask user to select the target column
+    target_column = st.selectbox("Select the target column (output labels):", training_data.columns)
 
+# Upload test data section
 st.header('Upload your test data set here')
 test_file = st.file_uploader("Choose a test CSV file", type="csv", key="test")
 
 if test_file is not None:
     st.write("Test data uploaded successfully!")
     test_data = pd.read_csv(test_file)
+    st.write("Test Data Preview:")
     st.write(test_data)
 
+# Button to run the model
 if st.button("Run Random Forest Model"):
     if training_file is not None and test_file is not None:
         with st.spinner('Simulation Running...'):
