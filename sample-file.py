@@ -99,9 +99,9 @@ class RandomForest:
             self.trees.append(tree)
 
     def predict(self, X):
-        predictions = [tree.predict(x) for tree in self.trees for x in X]
-        predictions = np.array(predictions).reshape(self.n_trees, len(X))
-        majority_votes = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=predictions)
+        predictions = np.array([tree.predict(x) for x in X for tree in self.trees])  # Correctly iterate over trees and samples
+        predictions = predictions.reshape(self.n_trees, len(X)).T  # Reshape to (num_samples, num_trees)
+        majority_votes = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=1, arr=predictions)  # Get majority class
         return majority_votes
 
 # Section to upload the training data
@@ -143,7 +143,7 @@ if uploaded_test_file is not None:
             model = st.session_state["trained_model"]
             X_test = test_data.values
 
-            predictions = [model.predict(x) for x in X_test]
+            predictions = model.predict(X_test)
             test_data["Predictions"] = predictions
             st.write("Predictions made successfully!")
             st.write(test_data)
