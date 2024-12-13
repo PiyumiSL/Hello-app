@@ -133,7 +133,7 @@ if uploaded_training_file is not None:
 st.header('Upload Your Test Data Set Here')
 uploaded_test_file = st.file_uploader("Choose a CSV file for testing", type="csv", key="test")
 
-if uploaded_test_file is not None:
+    if uploaded_test_file is not None:
     st.write("Test file uploaded successfully!")
     test_data = pd.read_csv(uploaded_test_file)
     st.write(test_data)
