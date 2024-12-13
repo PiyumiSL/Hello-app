@@ -10,3 +10,11 @@ if uploaded_file is not None:
     import pandas as pd
     data = pd.read_csv(uploaded_file)
     st.write(data)
+
+st.header('Upload your test data set here')
+test_file = st.file_uploader("Choose a test CSV file", type="csv", key="test")
+
+if test_file is not None:
+    st.write("Test data uploaded successfully!")
+    test_data = pd.read_csv(test_file)
+    st.write(test_data)
