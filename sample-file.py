@@ -19,6 +19,11 @@ if uploaded_file is not None:
         data.to_csv("uploaded_training_data.csv", index=False)
         st.success("Data saved successfully for future use!")
 
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
 # Load the data from the uploaded CSV file
 file_path = '/mnt/data/Data collection.csv'  # Adjust this if needed
 
