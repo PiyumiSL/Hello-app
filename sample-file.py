@@ -158,25 +158,25 @@ if uploaded_test_file is not None:
             st.error("Model is not trained yet. Please train the model first.")
 
 # Function to compute accuracy
-def accuracy_score(y_true, y_pred):
-    """Calculate the accuracy of predictions."""
-    return np.mean(y_true == y_pred)
+            def accuracy_score(y_true, y_pred):
+            """Calculate the accuracy of predictions."""
+            return np.mean(y_true == y_pred)
 
 # Add this section after making predictions in your Streamlit app
-if st.button("Make Predictions on Test Data"):
-    if "trained_model" in st.session_state:
-        model = st.session_state["trained_model"]
-        X_test = test_data.drop(columns=[target_column]).values
+            if st.button("Make Predictions on Test Data"):
+            if "trained_model" in st.session_state:
+            model = st.session_state["trained_model"]
+            X_test = test_data.drop(columns=[target_column]).values
 
-        predictions = model.predict(X_test)
-        test_data["Predictions"] = predictions
-        st.write("Predictions made successfully!")
-        st.write(test_data)
+            predictions = model.predict(X_test)
+            test_data["Predictions"] = predictions
+            st.write("Predictions made successfully!")
+            st.write(test_data)
 
         # Calculate accuracy
-        acc = accuracy_score(test_data[target_column].values, predictions)
-        st.write(f"Accuracy of the model: {acc:.2f}")
+            acc = accuracy_score(test_data[target_column].values, predictions)
+            st.write(f"Accuracy of the model: {acc:.2f}")
 
-    else:
-        st.error("Model is not trained yet. Please train the model first.")
+            else:
+            st.error("Model is not trained yet. Please train the model first.")
 
