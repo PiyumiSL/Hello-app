@@ -26,8 +26,8 @@ if st.button("Run Random Forest Model"):
             
             # Preprocessing the data
             st.write("Processing the training data...")
-            X_train = training_data.iloc[:, :-1]  # Features (all columns except the last)
-            y_train = training_data.iloc[:, -1]   # Target (last column)
+            X_train = training_data.drop(columns=[target_column])  # All columns except target
+            y_train = training_data[target_column]                # Selected target column
             
             st.write("Processing the test data...")
             X_test = test_data  # Features (all columns in the test dataset)
