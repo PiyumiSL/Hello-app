@@ -19,7 +19,7 @@ if uploaded_file is not None:
         data.to_csv("uploaded_training_data.csv", index=False)
         st.success("Data saved successfully for future use!")
 
- # Train the Random Forest model using the saved data
+# Train the Random Forest model using the saved data
         st.write("Training the Random Forest model...")
         
         # Assuming the last column is the target variable
