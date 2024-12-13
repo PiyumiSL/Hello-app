@@ -1,8 +1,8 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 # App title
 st.title('Synergy Prediction of Potential Drug Candidates')
@@ -111,6 +111,17 @@ class RandomForest:
         majority_votes = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=predictions)
         return majority_votes
 
+# Function to compute confusion matrix
+def confusion_matrix(y_true, y_pred):
+    """Create a confusion matrix."""
+    classes = np.unique(y_true)
+    matrix = np.zeros((len(classes), len(classes)), dtype=int)
+
+    for true, pred in zip(y_true, y_pred):
+        matrix[true, pred] += 1
+
+    return matrix, classes
+
 # Section to upload the training data
 st.header('Upload Your Training Data Set Here')
 uploaded_training_file = st.file_uploader("Choose a CSV file for training", type="csv", key="train")
@@ -148,11 +159,28 @@ if uploaded_test_file is not None:
     if st.button("Make Predictions on Test Data"):
         if "trained_model" in st.session_state:
             model = st.session_state["trained_model"]
-            X_test = test_data.values
+            X_test = test_data.drop(columns=[target_column]).values
 
             predictions = model.predict(X_test)
             test_data["Predictions"] = predictions
             st.write("Predictions made successfully!")
             st.write(test_data)
+
+            # Calculate confusion matrix
+            cm, classes = confusion_matrix(test_data[target_column].values, predictions)
+
+            # Plot confusion matrix
+            fig, ax = plt.subplots()
+            cax = ax.matshow(cm, cmap='Blues')
+            plt.colorbar(cax)
+
+            ax.set_xticklabels([''] + list(classes))
+            ax.set_yticklabels([''] + list(classes))
+
+            plt.xlabel('Predicted')
+            plt.ylabel('True')
+            plt.title('Confusion Matrix')
+
+            st.pyplot(fig)
         else:
             st.error("Model is not trained yet. Please train the model first.")
