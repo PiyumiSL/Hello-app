@@ -138,14 +138,14 @@ if uploaded_test_file is not None:
     test_data = pd.read_csv(uploaded_test_file)
     st.write(test_data)
 
-    if st.button("Make Predictions on Test Data"):
-        if "trained_model" in st.session_state:
-            model = st.session_state["trained_model"]
-            X_test = test_data.values
+   if st.button("Make Predictions on Test Data"):
+    if "trained_model" in st.session_state:
+        model = st.session_state["trained_model"]
+        X_test = test_data.values  # Convert test data to a NumPy array
 
-            predictions = [model.predict(x) for x in X_test]
-            test_data["Predictions"] = predictions
-            st.write("Predictions made successfully!")
-            st.write(test_data)
-        else:
-            st.error("Model is not trained yet. Please train the model first.")
+        predictions = model.predict(X_test)  # Get predictions for the entire dataset
+        test_data["Predictions"] = predictions
+        st.write("Predictions made successfully!")
+        st.write(test_data)
+    else:
+        st.error("Model is not trained yet. Please train the model first.")
