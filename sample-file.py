@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import random
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # App title
 st.title('Synergy Prediction of Potential Drug Candidates')
@@ -50,8 +51,6 @@ class DecisionTree:
     def __init__(self, max_depth):
         self.max_depth = max_depth
         self.tree = None
-        self.feature_index = None  # Initialize feature_index and threshold
-        self.threshold = None
 
     def fit(self, X, y, depth=0):
         if len(np.unique(y)) == 1 or depth == self.max_depth:
@@ -78,14 +77,10 @@ class DecisionTree:
         if isinstance(self.tree, int):
             return self.tree  # Leaf node
 
-        # Check if feature_index and threshold are defined
-        if self.feature_index is not None and self.threshold is not None:
-            if X[self.feature_index] <= self.threshold:
-                return self.left.predict(X)
-            else:
-                return self.right.predict(X)
+        if X[self.feature_index] <= self.threshold:
+            return self.left.predict(X)
         else:
-            return self.tree  # Return the tree value if it's a leaf
+            return self.right.predict(X)
 
 class RandomForest:
     """A simple random forest implementation."""
@@ -105,8 +100,7 @@ class RandomForest:
             self.trees.append(tree)
 
     def predict(self, X):
-        predictions = np.array([tree.predict(x) for tree in self.trees for x in X])  # Correctly iterate over trees and samples
-        predictions = predictions.reshape(self.n_trees, len(X))
+        predictions = np.array([tree.predict(x) for tree in self.trees for x in X]).reshape(self.n_trees, len(X))
         majority_votes = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=predictions)
         return majority_votes
 
@@ -147,11 +141,56 @@ if uploaded_test_file is not None:
     if st.button("Make Predictions on Test Data"):
         if "trained_model" in st.session_state:
             model = st.session_state["trained_model"]
-            X_test = test_data.values
+            X_test = test_data.drop(columns=[target_column]).values
 
             predictions = model.predict(X_test)
             test_data["Predictions"] = predictions
             st.write("Predictions made successfully!")
             st.write(test_data)
+
+            # Plot Confusion Matrix
+            conf_matrix = np.zeros((2, 2), dtype=int)
+            for true, pred in zip(test_data[target_column], test_data["Predictions"]):
+                conf_matrix[true, pred] += 1
+            
+            plt.figure(figsize=(6, 4))
+            sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
+            plt.title('Confusion Matrix')
+            plt.xlabel('Predicted')
+            plt.ylabel('True')
+            st.pyplot(plt)
+
+            # Plot ROC Curve
+            # Calculate True Positive Rate (TPR) and False Positive Rate (FPR)
+            thresholds = np.arange(0, 1.1, 0.1)
+            tpr = []
+            fpr = []
+
+            for threshold in thresholds:
+                tp = np.sum((predictions >= threshold) & (test_data[target_column] == 1))
+                fn = np.sum((predictions < threshold) & (test_data[target_column] == 1))
+                fp = np.sum((predictions >= threshold) & (test_data[target_column] == 0))
+                tn = np.sum((predictions < threshold) & (test_data[target_column] == 0))
+                
+                tpr.append(tp / (tp + fn) if (tp + fn) > 0 else 0)
+                fpr.append(fp / (fp + tn) if (fp + tn) > 0 else 0)
+
+            plt.figure(figsize=(6, 4))
+            plt.plot(fpr, tpr, marker='o')
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.title('ROC Curve')
+            plt.grid()
+            st.pyplot(plt)
+
+            # Plot Predicted vs Actual Values
+            plt.figure(figsize=(8, 5))
+            plt.scatter(test_data.index, test_data[target_column], color='blue', label='Actual', alpha=0.5)
+            plt.scatter(test_data.index, test_data["Predictions"], color='red', label='Predicted', alpha=0.5)
+            plt.title('Predicted vs Actual Values')
+            plt.xlabel('Index')
+            plt.ylabel('Values')
+            plt.legend()
+            st.pyplot(plt)
         else:
             st.error("Model is not trained yet. Please train the model first.")
