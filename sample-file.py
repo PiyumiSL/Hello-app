@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # App title
 st.title('Synergy Prediction of Potential Drug Candidates')
@@ -152,13 +150,10 @@ if uploaded_test_file is not None:
             conf_matrix = np.zeros((2, 2), dtype=int)
             for true, pred in zip(test_data[target_column], test_data["Predictions"]):
                 conf_matrix[true, pred] += 1
-            
-            plt.figure(figsize=(6, 4))
-            sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
-            plt.title('Confusion Matrix')
-            plt.xlabel('Predicted')
-            plt.ylabel('True')
-            st.pyplot(plt)
+
+            # Display Confusion Matrix using Streamlit
+            st.subheader("Confusion Matrix")
+            st.write(conf_matrix)
 
             # Plot ROC Curve
             # Calculate True Positive Rate (TPR) and False Positive Rate (FPR)
@@ -175,22 +170,15 @@ if uploaded_test_file is not None:
                 tpr.append(tp / (tp + fn) if (tp + fn) > 0 else 0)
                 fpr.append(fp / (fp + tn) if (fp + tn) > 0 else 0)
 
-            plt.figure(figsize=(6, 4))
-            plt.plot(fpr, tpr, marker='o')
-            plt.xlabel('False Positive Rate')
-            plt.ylabel('True Positive Rate')
-            plt.title('ROC Curve')
-            plt.grid()
-            st.pyplot(plt)
+            # Display ROC Curve using Streamlit
+            st.subheader("ROC Curve")
+            roc_data = pd.DataFrame({'FPR': fpr, 'TPR': tpr})
+            st.line_chart(roc_data.set_index('FPR'))
 
             # Plot Predicted vs Actual Values
-            plt.figure(figsize=(8, 5))
-            plt.scatter(test_data.index, test_data[target_column], color='blue', label='Actual', alpha=0.5)
-            plt.scatter(test_data.index, test_data["Predictions"], color='red', label='Predicted', alpha=0.5)
-            plt.title('Predicted vs Actual Values')
-            plt.xlabel('Index')
-            plt.ylabel('Values')
-            plt.legend()
-            st.pyplot(plt)
+            st.subheader("Predicted vs Actual Values")
+            predicted_vs_actual = pd.DataFrame({'Actual': test_data[target_column], 'Predicted': test_data["Predictions"]})
+            st.line_chart(predicted_vs_actual)
+
         else:
             st.error("Model is not trained yet. Please train the model first.")
