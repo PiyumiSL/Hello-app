@@ -159,9 +159,13 @@ class ANNModel:
         return x * (1 - x)
 
     def fit(self, X, y):
+        # Encode y to zero-based index if necessary
+        unique_classes = np.unique(y)
+        y_encoded = np.searchsorted(unique_classes, y)
+
         # One-hot encoding of y
-        y_one_hot = np.zeros((y.size, self.output_size))
-        y_one_hot[np.arange(y.size), y] = 1
+        y_one_hot = np.zeros((y_encoded.size, self.output_size))
+        y_one_hot[np.arange(y_encoded.size), y_encoded] = 1
 
         for _ in range(self.epochs):
             # Forward pass
@@ -216,58 +220,18 @@ if st.button("Train Model"):  # Ensure the colon is present
         y = training_data[target_column].values
 
         if model_type == "Random Forest(RF)":
-            model = RandomForest(n_trees=10, max_depth=3, sample_size=int(0.8 * len(X)))
+            model = RandomForest(n_trees=10, max_depth=5, sample_size=int(len(X) * 0.8))
             model.fit(X, y)
-            st.success("Random Forest Model trained successfully!")
+            st.success("Random Forest model trained successfully!")
+
         elif model_type == "Support Vector Machine(SVM)":
             model = SupportVectorMachine()
             model.fit(X, y)
-            st.success("Support Vector Machine Model trained successfully!")
+            st.success("SVM model trained successfully!")
+
         elif model_type == "Artificial Neural Network(ANN)":
-            st.write("Training an Artificial Neural Network (ANN) model...")
-
-            # Define ANN parameters
-            input_size = X.shape[1]
-            hidden_size = 8  # Changeable, number of hidden neurons
-            output_size = len(np.unique(y))  # Number of output classes
-            ann_model = ANNModel(input_size, hidden_size, output_size, learning_rate=0.01, epochs=500)
-
-            ann_model.fit(X, y)
+            # Assuming the output size corresponds to the number of unique classes in y
+            output_size = len(np.unique(y))
+            model = ANNModel(input_size=X.shape[1], hidden_size=5, output_size=output_size)
+            model.fit(X, y)
             st.success("ANN model trained successfully!")
-            st.session_state["trained_model"] = ann_model
-
-        # Save the trained model for predictions
-        st.session_state["trained_model"] = model
-        st.session_state["train_features"] = training_data.drop(columns=[target_column]).columns
-
-
-# Section to upload the test data
-st.header('Upload Your Test Data Set Here')
-uploaded_test_file = st.file_uploader("Choose a CSV file for testing", type="csv", key="test")
-
-if uploaded_test_file is not None:
-    st.write("Test file uploaded successfully!")
-    test_data = pd.read_csv(uploaded_test_file)
-    st.write(test_data)
-
-    if st.button("Make Predictions on Test Data"):
-        if "trained_model" in st.session_state:
-            model = st.session_state["trained_model"]
-
-            # Ensure test data matches training data dimensions
-            train_features = st.session_state["train_features"]
-            test_features = test_data.columns
-
-            missing_features = set(train_features) - set(test_features)
-            for feature in missing_features:
-                test_data[feature] = 0
-
-            test_data = test_data[train_features]
-            X_test = test_data.values
-
-            predictions = model.predict(X_test)
-            test_data["Predictions"] = predictions
-            st.write("Predictions made successfully!")
-            st.write(test_data)
-        else:
-            st.error("Model is not trained yet. Please train the model first.")
