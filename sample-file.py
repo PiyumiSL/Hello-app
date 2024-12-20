@@ -1,12 +1,11 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import random
 
 # App title
 st.title('Predicting the Presence of Heart Diseases')
 
-# Utility functions for Random Forest
+# Utility functions
 def calculate_entropy(y):
     """Calculate entropy of a label array."""
     classes, counts = np.unique(y, return_counts=True)
@@ -84,7 +83,7 @@ class DecisionTree:
             else:
                 return self.right.predict(X)
         else:
-            return self.tree  # Return the tree value if it's a leaf
+            return self.tree
 
 class RandomForest:
     """A simple random forest implementation."""
@@ -109,23 +108,19 @@ class RandomForest:
         majority_votes = np.apply_along_axis(lambda x: np.bincount(x).argmax(), axis=0, arr=predictions)
         return majority_votes
 
-# SVM Class
 class SupportVectorMachine:
-    """A simple linear Support Vector Machine implementation."""
+    """A simple Support Vector Machine implementation."""
     def __init__(self, learning_rate=0.01, n_iters=1000, lambda_param=0.01):
         self.learning_rate = learning_rate
         self.n_iters = n_iters
         self.lambda_param = lambda_param
         self.weights = None
-        self.bias = None
+        self.bias = 0
 
     def fit(self, X, y):
-        """Train the SVM using gradient descent."""
         n_samples, n_features = X.shape
-        y_ = np.where(y <= 0, -1, 1)
-
         self.weights = np.zeros(n_features)
-        self.bias = 0
+        y_ = np.where(y <= 0, -1, 1)
 
         for _ in range(self.n_iters):
             for idx, x_i in enumerate(X):
@@ -139,15 +134,10 @@ class SupportVectorMachine:
                     self.bias -= self.learning_rate * y_[idx]
 
     def predict(self, X):
-        """Make predictions using the trained SVM."""
         approx = np.dot(X, self.weights) - self.bias
         return np.sign(approx)
 
-# Model selection
-st.header('Choose Your Model')
-model_choice = st.selectbox("Select a model to train", ["Random Forest", "Support Vector Machine"])
-
-# Upload training data
+# Section to upload the training data
 st.header('Upload Your Training Data Set Here')
 uploaded_training_file = st.file_uploader("Choose a CSV file for training", type="csv", key="train")
 
@@ -157,25 +147,29 @@ if uploaded_training_file is not None:
     st.write(training_data)
 
     target_column = st.selectbox("Select the target column (output)", training_data.columns)
-    if st.button(f"Train {model_choice} Model"):
+    model_type = st.selectbox("Select the model to train", ["Random Forest", "Support Vector Machine"])
+
+    if st.button("Train Model"):
         if target_column not in training_data.columns:
             st.error(f"Target column '{target_column}' not found.")
         else:
             X = training_data.drop(columns=[target_column]).values
             y = training_data[target_column].values
 
-            if model_choice == "Random Forest":
+            if model_type == "Random Forest":
                 model = RandomForest(n_trees=10, max_depth=3, sample_size=int(0.8 * len(X)))
                 model.fit(X, y)
                 st.success("Random Forest Model trained successfully!")
-            elif model_choice == "Support Vector Machine":
-                model = SupportVectorMachine(learning_rate=0.01, n_iters=1000, lambda_param=0.01)
+            elif model_type == "Support Vector Machine":
+                model = SupportVectorMachine()
                 model.fit(X, y)
                 st.success("Support Vector Machine Model trained successfully!")
 
+            # Save the trained model for predictions
             st.session_state["trained_model"] = model
+            st.session_state["train_features"] = training_data.drop(columns=[target_column]).columns
 
-# Upload test data
+# Section to upload the test data
 st.header('Upload Your Test Data Set Here')
 uploaded_test_file = st.file_uploader("Choose a CSV file for testing", type="csv", key="test")
 
@@ -187,6 +181,16 @@ if uploaded_test_file is not None:
     if st.button("Make Predictions on Test Data"):
         if "trained_model" in st.session_state:
             model = st.session_state["trained_model"]
+
+            # Ensure test data matches training data dimensions
+            train_features = st.session_state["train_features"]
+            test_features = test_data.columns
+
+            missing_features = set(train_features) - set(test_features)
+            for feature in missing_features:
+                test_data[feature] = 0
+
+            test_data = test_data[train_features]
             X_test = test_data.values
 
             predictions = model.predict(X_test)
