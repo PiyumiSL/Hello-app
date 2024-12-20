@@ -5,7 +5,7 @@ import numpy as np
 import random
 
 # App title
-st.title('Synergy Prediction of Potential Drug Candidates')
+st.title('Predicting the presence of heart diseases')
 
 # Utility functions to create a simple Random Forest
 def calculate_entropy(y):
