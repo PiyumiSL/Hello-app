@@ -230,8 +230,41 @@ if st.button("Train Model"):  # Ensure the colon is present
             st.success("SVM model trained successfully!")
 
         elif model_type == "Artificial Neural Network(ANN)":
-            # Assuming the output size corresponds to the number of unique classes in y
             output_size = len(np.unique(y))
             model = ANNModel(input_size=X.shape[1], hidden_size=5, output_size=output_size)
             model.fit(X, y)
             st.success("ANN model trained successfully!")
+
+# Section to upload the test data
+st.header('Upload Your Test Data Set Here')
+uploaded_test_file = st.file_uploader("Choose a CSV file for testing", type="csv", key="test")
+
+if uploaded_test_file is not None:
+    st.write("Test file uploaded successfully!")
+    test_data = pd.read_csv(uploaded_test_file)
+    st.write(test_data)
+
+    if st.button("Make Predictions"):
+        # Check if the test data matches the training data dimensions
+        if target_column not in test_data.columns:
+            st.error(f"Target column '{target_column}' not found in test data.")
+        else:
+            X_test = test_data.drop(columns=[target_column]).values
+
+            if model_type == "Random Forest(RF)":
+                predictions = model.predict(X_test)
+                st.success("Predictions made using Random Forest model!")
+            
+            elif model_type == "Support Vector Machine(SVM)":
+                predictions = model.predict(X_test)
+                st.success("Predictions made using SVM model!")
+
+            elif model_type == "Artificial Neural Network(ANN)":
+                predictions = model.predict(X_test)
+                st.success("Predictions made using ANN model!")
+
+            # Display predictions
+            predictions_df = pd.DataFrame(predictions, columns=["Predictions"])
+            st.write("Predictions:")
+            st.write(predictions_df)
+
