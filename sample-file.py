@@ -205,7 +205,7 @@ if uploaded_training_file is not None:
     target_column = st.selectbox("Select the target column (output)", training_data.columns)
     model_type = st.selectbox("Select the model to train", ["Random Forest(RF)", "Support Vector Machine(SVM)","Artificial Neural Network(ANN)"])
 
- if st.button("Train Model"):
+ if st.button("Train Model")
     if target_column not in training_data.columns:
         st.error(f"Target column '{target_column}' not found.")
     else:
