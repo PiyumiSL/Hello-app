@@ -137,6 +137,62 @@ class SupportVectorMachine:
         approx = np.dot(X, self.weights) - self.bias
         return np.sign(approx)
 
+class ANNModel:
+    """Simple Artificial Neural Network (ANN) with one hidden layer."""
+    def __init__(self, input_size, hidden_size, output_size, learning_rate=0.01, epochs=100):
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.output_size = output_size
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+
+        # Initialize weights
+        self.weights_input_hidden = np.random.randn(input_size, hidden_size)
+        self.weights_hidden_output = np.random.randn(hidden_size, output_size)
+        self.bias_hidden = np.zeros(hidden_size)
+        self.bias_output = np.zeros(output_size)
+
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def sigmoid_derivative(self, x):
+        return x * (1 - x)
+
+    def fit(self, X, y):
+        # One-hot encoding of y
+        y_one_hot = np.zeros((y.size, self.output_size))
+        y_one_hot[np.arange(y.size), y] = 1
+
+        for _ in range(self.epochs):
+            # Forward pass
+            hidden_layer_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
+            hidden_layer_output = self.sigmoid(hidden_layer_input)
+
+            output_layer_input = np.dot(hidden_layer_output, self.weights_hidden_output) + self.bias_output
+            output_layer_output = self.sigmoid(output_layer_input)
+
+            # Backward pass
+            output_error = y_one_hot - output_layer_output
+            output_delta = output_error * self.sigmoid_derivative(output_layer_output)
+
+            hidden_error = np.dot(output_delta, self.weights_hidden_output.T)
+            hidden_delta = hidden_error * self.sigmoid_derivative(hidden_layer_output)
+
+            # Update weights and biases
+            self.weights_hidden_output += np.dot(hidden_layer_output.T, output_delta) * self.learning_rate
+            self.weights_input_hidden += np.dot(X.T, hidden_delta) * self.learning_rate
+            self.bias_output += np.sum(output_delta, axis=0) * self.learning_rate
+            self.bias_hidden += np.sum(hidden_delta, axis=0) * self.learning_rate
+
+    def predict(self, X):
+        hidden_layer_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
+        hidden_layer_output = self.sigmoid(hidden_layer_input)
+
+        output_layer_input = np.dot(hidden_layer_output, self.weights_hidden_output) + self.bias_output
+        output_layer_output = self.sigmoid(output_layer_input)
+
+        return np.argmax(output_layer_output, axis=1)
+
 # Section to upload the training data
 st.header('Upload Your Training Data Set Here')
 uploaded_training_file = st.file_uploader("Choose a CSV file for training", type="csv", key="train")
@@ -147,7 +203,7 @@ if uploaded_training_file is not None:
     st.write(training_data)
 
     target_column = st.selectbox("Select the target column (output)", training_data.columns)
-    model_type = st.selectbox("Select the model to train", ["Random Forest", "Support Vector Machine"])
+    model_type = st.selectbox("Select the model to train", ["Random Forest(RF)", "Support Vector Machine(SVM)","Artificial Neural Network(ANN)"])
 
     if st.button("Train Model"):
         if target_column not in training_data.columns:
@@ -164,6 +220,20 @@ if uploaded_training_file is not None:
                 model = SupportVectorMachine()
                 model.fit(X, y)
                 st.success("Support Vector Machine Model trained successfully!")
+
+            elif selected_model == "Artificial Neural Network (ANN)":
+                st.write("Training an Artificial Neural Network (ANN) model...")
+
+                # Define ANN parameters
+                input_size = X.shape[1]
+                hidden_size = 8  # Changeable, number of hidden neurons
+                output_size = len(np.unique(y))  # Number of output classes
+                ann_model = ANNModel(input_size, hidden_size, output_size, learning_rate=0.01, epochs=500)
+
+                ann_model.fit(X, y)
+                st.success("ANN model trained successfully!")
+                st.session_state["trained_model"] = ann_model
+
 
             # Save the trained model for predictions
             st.session_state["trained_model"] = model
@@ -199,3 +269,10 @@ if uploaded_test_file is not None:
             st.write(test_data)
         else:
             st.error("Model is not trained yet. Please train the model first.")
+
+        if selected_model == "Artificial Neural Network (ANN)":
+            predictions = model.predict(X_test)
+            test_data["Predictions"] = predictions
+            st.write("Predictions made successfully using ANN!")
+            st.write(test_data)
+
