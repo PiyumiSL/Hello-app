@@ -220,19 +220,22 @@ if st.button("Train Model"):  # Ensure the colon is present
         y = training_data[target_column].values
 
         if model_type == "Random Forest(RF)":
-            model = RandomForest(n_trees=10, max_depth=5, sample_size=int(len(X) * 0.8))
+            model = RandomForest(n_trees=10, max_depth=5, sample_size=5)
             model.fit(X, y)
+            st.session_state.model = model  # Save model to session state
             st.success("Random Forest model trained successfully!")
 
         elif model_type == "Support Vector Machine(SVM)":
             model = SupportVectorMachine()
             model.fit(X, y)
+            st.session_state.model = model  # Save model to session state
             st.success("SVM model trained successfully!")
 
         elif model_type == "Artificial Neural Network(ANN)":
             output_size = len(np.unique(y))
             model = ANNModel(input_size=X.shape[1], hidden_size=5, output_size=output_size)
             model.fit(X, y)
+            st.session_state.model = model  # Save model to session state
             st.success("ANN model trained successfully!")
 
 # Section to upload the test data
@@ -251,20 +254,24 @@ if uploaded_test_file is not None:
         else:
             X_test = test_data.drop(columns=[target_column]).values
 
-            if model_type == "Random Forest(RF)":
-                predictions = model.predict(X_test)
-                st.success("Predictions made using Random Forest model!")
-            
-            elif model_type == "Support Vector Machine(SVM)":
-                predictions = model.predict(X_test)
-                st.success("Predictions made using SVM model!")
+            if 'model' in st.session_state:  # Check if the model exists in session state
+                model = st.session_state.model  # Retrieve the model from session state
 
-            elif model_type == "Artificial Neural Network(ANN)":
-                predictions = model.predict(X_test)
-                st.success("Predictions made using ANN model!")
+                if model_type == "Random Forest(RF)":
+                    predictions = model.predict(X_test)
+                    st.success("Predictions made using Random Forest model!")
+                
+                elif model_type == "Support Vector Machine(SVM)":
+                    predictions = model.predict(X_test)
+                    st.success("Predictions made using SVM model!")
 
-            # Display predictions
-            predictions_df = pd.DataFrame(predictions, columns=["Predictions"])
-            st.write("Predictions:")
-            st.write(predictions_df)
+                elif model_type == "Artificial Neural Network(ANN)":
+                    predictions = model.predict(X_test)
+                    st.success("Predictions made using ANN model!")
 
+                # Display predictions
+                predictions_df = pd.DataFrame(predictions, columns=["Predictions"])
+                st.write("Predictions:")
+                st.write(predictions_df)
+            else:
+                st.error("Model has not been trained yet.")
