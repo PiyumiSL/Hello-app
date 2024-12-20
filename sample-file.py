@@ -205,39 +205,38 @@ if uploaded_training_file is not None:
     target_column = st.selectbox("Select the target column (output)", training_data.columns)
     model_type = st.selectbox("Select the model to train", ["Random Forest(RF)", "Support Vector Machine(SVM)","Artificial Neural Network(ANN)"])
 
-    if st.button("Train Model"):
-        if target_column not in training_data.columns:
-            st.error(f"Target column '{target_column}' not found.")
-        else:
-            X = training_data.drop(columns=[target_column]).values
-            y = training_data[target_column].values
+ if st.button("Train Model"):
+    if target_column not in training_data.columns:
+        st.error(f"Target column '{target_column}' not found.")
+    else:
+        X = training_data.drop(columns=[target_column]).values
+        y = training_data[target_column].values
 
-            if model_type == "Random Forest":
-                model = RandomForest(n_trees=10, max_depth=3, sample_size=int(0.8 * len(X)))
-                model.fit(X, y)
-                st.success("Random Forest Model trained successfully!")
-            elif model_type == "Support Vector Machine":
-                model = SupportVectorMachine()
-                model.fit(X, y)
-                st.success("Support Vector Machine Model trained successfully!")
+        if model_type == "Random Forest(RF)":
+            model = RandomForest(n_trees=10, max_depth=3, sample_size=int(0.8 * len(X)))
+            model.fit(X, y)
+            st.success("Random Forest Model trained successfully!")
+        elif model_type == "Support Vector Machine(SVM)":
+            model = SupportVectorMachine()
+            model.fit(X, y)
+            st.success("Support Vector Machine Model trained successfully!")
+        elif model_type == "Artificial Neural Network(ANN)":
+            st.write("Training an Artificial Neural Network (ANN) model...")
 
-            elif selected_model == "Artificial Neural Network (ANN)":
-                st.write("Training an Artificial Neural Network (ANN) model...")
+            # Define ANN parameters
+            input_size = X.shape[1]
+            hidden_size = 8  # Changeable, number of hidden neurons
+            output_size = len(np.unique(y))  # Number of output classes
+            ann_model = ANNModel(input_size, hidden_size, output_size, learning_rate=0.01, epochs=500)
 
-                # Define ANN parameters
-                input_size = X.shape[1]
-                hidden_size = 8  # Changeable, number of hidden neurons
-                output_size = len(np.unique(y))  # Number of output classes
-                ann_model = ANNModel(input_size, hidden_size, output_size, learning_rate=0.01, epochs=500)
+            ann_model.fit(X, y)
+            st.success("ANN model trained successfully!")
+            st.session_state["trained_model"] = ann_model
 
-                ann_model.fit(X, y)
-                st.success("ANN model trained successfully!")
-                st.session_state["trained_model"] = ann_model
+        # Save the trained model for predictions
+        st.session_state["trained_model"] = model
+        st.session_state["train_features"] = training_data.drop(columns=[target_column]).columns
 
-
-            # Save the trained model for predictions
-            st.session_state["trained_model"] = model
-            st.session_state["train_features"] = training_data.drop(columns=[target_column]).columns
 
 # Section to upload the test data
 st.header('Upload Your Test Data Set Here')
@@ -269,10 +268,3 @@ if uploaded_test_file is not None:
             st.write(test_data)
         else:
             st.error("Model is not trained yet. Please train the model first.")
-
-        if selected_model == "Artificial Neural Network (ANN)":
-            predictions = model.predict(X_test)
-            test_data["Predictions"] = predictions
-            st.write("Predictions made successfully using ANN!")
-            st.write(test_data)
-
